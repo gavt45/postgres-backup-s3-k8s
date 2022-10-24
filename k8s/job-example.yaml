@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-backup-cron-secrets
+type: Opaque
+stringData:
+  postgresUser: <Username>
+  postgresPassword: <Password>
+  s3Access: <s3 access key>
+  s3Secret: <s3 secret key>
+  encryptionPassphrase: <encryption passphrase>
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup-cron
+spec:
+  # every day at 00:00
+  schedule: "0 0 * * *"
+  concurrencyPolicy: "Forbid"
+  # Store 7 days of history
+  successfulJobsHistoryLimit: 7
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      completions: 1
+      parallelism: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: run-backup-cron
+              image: gavt45/postgres-backup-s3:latest
+              imagePullPolicy: IfNotPresent
+              env:
+                # use first replica in each shard, use `kubectl get svc | grep test-backups`
+                - name: POSTGRES_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-cron-secrets
+                      key: encryptionPassphrase
+                      optional: false
+                - name: POSTGRES_HOST
+                  value: ""
+                - name: POSTGRES_PORT
+                  value: ""
+                - name: S3_BUCKET
+                  value: ""
+                - name: S3_PATH
+                  value: ""
+                - name: S3_ENDPOINT
+                  value: ""
+                - name: BACKUP_KEEP_DAYS
+                  value: "7"
+                - name: PASSPHRASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-cron-secrets
+                      key: encryptionPassphrase
+                      optional: false
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-cron-secrets
+                      key: postgresUser
+                      optional: false
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-cron-secrets
+                      key: postgresPassword
+                      optional: false
+                - name: S3_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-cron-secrets
+                      key: s3Access
+                      optional: false
+                - name: S3_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-cron-secrets
+                      key: s3Secret
+                      optional: false

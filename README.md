@@ -14,7 +14,6 @@ services:
   backup:
     image: eeshugerman/postgres-backup-s3:13
     environment:
-      SCHEDULE: '@weekly'     # optional
       BACKUP_KEEP_DAYS: 7     # optional
       PASSPHRASE: passphrase  # optional
       S3_REGION: region
@@ -52,6 +51,13 @@ docker exec <container name> sh restore.sh <timestamp>
 ```sh
 DOCKER_BUILDKIT=1 docker build --build-arg ALPINE_VERSION=3.14 .
 ```
+
+## Build for multiple architectures
+
+```sh
+docker build -t gavt45/postgres-backup-s3:latest --build-arg ALPINE_VERSION=3.16 .
+```
+
 ## Run a simple test environment with Docker Compose
 ```sh
 cp template.env .env
