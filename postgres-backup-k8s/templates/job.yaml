@@ -99,3 +99,108 @@ spec:
           tolerations:
             {{- toYaml . | nindent 8 }}
           {{- end }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "postgres-backup-k8s.fullname" . }}-restore-cronjob
+  labels:
+    {{- include "postgres-backup-k8s.labels" . | nindent 4 }}
+spec:
+  # Never: https://stackoverflow.com/questions/57954002/schedule-cron-job-to-never-happen
+  schedule: "* * 31 2 *"
+  concurrencyPolicy: "Forbid"
+  # Store 7 days of history
+  successfulJobsHistoryLimit: {{ .Values.backup.successfulJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      completions: 1
+      parallelism: 1
+      template:
+        metadata:
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          labels:
+            {{- include "postgres-backup-k8s.selectorLabels" . | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          containers:
+            - name: {{ .Chart.Name }}-backup-cron
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - sh
+                - restore.sh
+              env:
+                # use first replica in each shard, use `kubectl get svc | grep test-backups`
+                - name: POSTGRES_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "postgres-backup-k8s.fullname" . }}-secrets
+                      key: postgresDatabase
+                      optional: false
+                - name: POSTGRES_HOST
+                  value: {{ .Values.backup.postgres.host | quote }}
+                - name: POSTGRES_PORT
+                  value: {{ .Values.backup.postgres.port | quote }}
+                - name: S3_BUCKET
+                  value: {{ .Values.backup.s3.bucket | quote }}
+                - name: S3_PREFIX
+                  value: {{ .Values.backup.s3.prefix | quote }}
+                - name: S3_ENDPOINT
+                  value: {{ .Values.backup.s3.endpoint | quote }}
+                - name: BACKUP_KEEP_DAYS
+                  value: {{ .Values.backup.s3.backup_keep_days | quote }}
+                - name: PASSPHRASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "postgres-backup-k8s.fullname" . }}-secrets
+                      key: encryptionPassphrase
+                      optional: false
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "postgres-backup-k8s.fullname" . }}-secrets
+                      key: postgresUser
+                      optional: false
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "postgres-backup-k8s.fullname" . }}-secrets
+                      key: postgresPassword
+                      optional: false
+                - name: S3_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "postgres-backup-k8s.fullname" . }}-secrets
+                      key: s3Access
+                      optional: false
+                - name: S3_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "postgres-backup-k8s.fullname" . }}-secrets
+                      key: s3Secret
+                      optional: false
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
