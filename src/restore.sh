@@ -35,10 +35,25 @@ if [ -n "$PASSPHRASE" ]; then
   rm db.dump.gpg
 fi
 
-conn_opts="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DATABASE"
+tar xvf db.dump
+rm db.dump
+
+# Skip postgres, repmgr and pgpool_adm roles alter and creation
+cat db | \
+  grep -wvx "CREATE ROLE postgres;" | \
+  grep -wvx "ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS PASSWORD .*" | \
+  grep -wvx "CREATE ROLE repmgr;" | \
+  grep -wvx "ALTER ROLE repmgr WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS PASSWORD .*" | \
+  grep -wvx "CREATE ROLE pgpool_adm;" | \
+  grep -wvx "ALTER ROLE pgpool_adm WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS PASSWORD .*" \
+  > db.nopg
+
+rm db
+
+conn_opts="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER"
 
 echo "Restoring from backup..."
-pg_restore $conn_opts --clean --if-exists db.dump
-rm db.dump
+psql $conn_opts -f db.nopg postgres
+rm db.nopg
 
 echo "Restore complete."
