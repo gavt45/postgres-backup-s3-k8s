@@ -2,8 +2,18 @@ apiVersion: v1
 entries:
   postgres-backup-k8s:
   - apiVersion: v2
+    appVersion: 0.2.1
+    created: "2022-11-07T11:17:47.530028+07:00"
+    description: A Helm chart to deploy postgresql backup cron job
+    digest: e45f09ed1fbd9c2de5d2fceefb03d6298f6d4a6078b576c9bac4287ce8aea24f
+    name: postgres-backup-k8s
+    type: application
+    urls:
+    - postgres-backup-k8s-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v2
     appVersion: 0.2.0
-    created: "2022-10-24T17:25:54.868024+07:00"
+    created: "2022-11-07T11:17:47.529598+07:00"
     description: A Helm chart to deploy postgresql backup cron job
     digest: 6d1b9ab8b827d44d5dff691e78530525c29e72cb5d4d59ee9bb573b46624fc07
     name: postgres-backup-k8s
@@ -13,7 +23,7 @@ entries:
     version: 0.2.0
   - apiVersion: v2
     appVersion: 0.1.0
-    created: "2022-10-24T17:25:54.867666+07:00"
+    created: "2022-11-07T11:17:47.529076+07:00"
     description: A Helm chart to deploy postgresql backup cron job
     digest: 66bf5693ed9a36228fe843699c4a9660b6c0124f00434b973a2c9cc02f5cfae3
     name: postgres-backup-k8s
@@ -21,4 +31,4 @@ entries:
     urls:
     - postgres-backup-k8s-0.1.0.tgz
     version: 0.1.0
-generated: "2022-10-24T17:25:54.865858+07:00"
+generated: "2022-11-07T11:17:47.528474+07:00"
