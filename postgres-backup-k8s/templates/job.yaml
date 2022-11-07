@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ include "postgres-backup-k8s.fullname" . }}-cronjob
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "postgres-backup-k8s.labels" . | nindent 4 }}
 spec:
@@ -104,6 +105,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ include "postgres-backup-k8s.fullname" . }}-restore-cronjob
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "postgres-backup-k8s.labels" . | nindent 4 }}
 spec:
