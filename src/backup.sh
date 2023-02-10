@@ -3,16 +3,24 @@
 set -eu
 set -o pipefail
 
+
 trap 'rm /tmp/.backup.lck' ERR
+
+if [ -z "$S3_PREFIX" ] || [ "$S3_PREFIX" == "" ] || [ "$S3_PREFIX" == "/" ]; then
+  echo "S3_PREFIX must be set and not equal to '' or '/'\!" 1>&2
+  exit 1
+fi
 
 if [ -f "/tmp/.backup.lck" ]; then 
   echo "Lock file exists!"
   exit 0
 fi
 
+
+
 touch /tmp/.backup.lck
 
-# source ./env.sh
+source ./env.sh
 
 echo "Creating backup of $POSTGRES_INSTALLATION database..."
 
@@ -50,11 +58,6 @@ wait
 # rm "$local_file"
 
 echo "Backup complete."
-
-if [ -z "$S3_PREFIX" ] || [ "$S3_PREFIX" == "" ] || [ "$S3_PREFIX" == "/" ]; then
-  echo "S3_PREFIX must be set and not equal to '' or '/'\!" 1>&2
-  exit 1
-fi
 
 if [ -n "$BACKUP_KEEP_DAYS" ]; then
   sec=$((86400*BACKUP_KEEP_DAYS))

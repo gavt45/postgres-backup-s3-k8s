@@ -5,6 +5,8 @@ set -o pipefail
 
 apk update
 
+apk add bash
+
 # install pg_dump
 apk add postgresql15-client
 
